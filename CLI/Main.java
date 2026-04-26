@@ -1,6 +1,8 @@
 package CLI;
 
 import java.util.Scanner;
+import java.io.File;
+import java.io.FileNotFoundException;
 
 public class Main {
 
@@ -25,24 +27,27 @@ public class Main {
             		return;
             		
             	case 1:
-            		AdminCLI.run(consoleInput);
-            		break;
+                    if (signIn()) {
+                        System.out.println("Sign In successful");
+                    } else {
+                        System.out.println("Sign In failed");
+                    }
+                    break;
             		
             	case 2:
-            		CustomerCLI.run(consoleInput);
             		break;
             }
         }
+
+        scanner.close();
     }
 
     private static void printWelcomeMenu() {
 
         // Replace placeholders with enumeration of existing users (1..n)
-        System.out.println("PLEASE SELECT USER BY INPUTTING THE CORRESPONDING NUMBER (or 0 for exit)");
-        System.out.println("1) 101 | userName1 | admin");
-        System.out.println("2) 102 | userName2 | customer");
-        System.out.println("3) 103 | userName3 | customer");
-
+        System.out.println("PLEASE SELECT ONE OF THE FOLLOWING:");
+        System.out.println("1) Sign In");
+        System.out.println("2) Sign Up");
         System.out.println("0) Exit");
     }
 
@@ -51,5 +56,56 @@ public class Main {
             return null;
         }
         return consoleInput.nextLine();
+    }
+
+    private static boolean signIn() {
+        Systen.out.println("Sign In");
+        System.out.println("Please enter your username:");
+        String username = readLine(consoleInput);
+        System.out.println("Please enter your password:");
+        String password = readLine(consoleInput);
+        File userAccounts = openFile("UserAccounts.txt");
+
+        openFile("UserAccounts.txt").forEach(line -> {
+            String[] userInfo = line.split(";");
+            if (userInfo[0].equals(username) && userInfo[1].equals(password)) {
+                if (userInfo[2].equals("admin")) {
+                    AdminCLI.run(consoleInput);
+                } else {
+                    CustomerCLI.run(consoleInput);
+                }
+            }
+        });
+    }
+
+    private static boolean signUp() {
+        System.out.println("Sign Up");
+        System.out.println("Please enter your desired username:");
+        String username = readLine(consoleInput);
+        System.out.println("Please enter your house number:");
+        String houseNumber = readLine(consoleInput);    
+        System.out.println("Please enter your postcode:");
+        String postcode = readLine(consoleInput);
+        System.out.println("Please enter your city:");
+        String city = readLine(consoleInput);
+        System.out.println("Please enter your role:");
+        String role = readLine(consoleInput);
+
+        Integer currentUserID = getIDFromFile("UserAccounts.txt") + 1;
+
+        File userAccounts = openFile("UserAccounts.txt");
+        id = getIDFromFile("UserAccounts.txt") + 1;
+        userAccounts.write(username + ";" + houseNumber + ";" + postcode + ";" + city + ";" + role);
+    }
+
+    private static Integer getIDFromFile(String filename) {
+        //READ LAST LINE FROM FILE AND EXTRACT ID
+        File userAccounts = openFile("UserAccounts.txt");
+        String lastLine = "";
+        while (userAccounts.hasNextLine()) {
+            lastLine = userAccounts.nextLine();
+        }
+        String[] userInfo = lastLine.split(";");
+        return Integer.parseInt(userInfo[0]);   
     }
 }
