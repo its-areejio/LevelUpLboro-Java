@@ -1,9 +1,10 @@
 package CLI;
 
-import java.util.Scanner;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Scanner;
 
 public class Main {
 
@@ -21,22 +22,28 @@ public class Main {
             int selection = Integer.parseInt(line.trim());
 
             switch (selection) {
-            	case 0:
-            		System.out.println("Goodbye");
-            		System.out.println("Closing program...");
-            		System.out.println();
-            		return;
+            	case 0 -> {
+                    System.out.println("Goodbye");
+                    System.out.println("Closing program...");
+                    System.out.println();
+                    return;
+                }
             		
-            	case 1:
-                    if (signIn()) {
+            	case 1 -> {
+                    if (signIn(scanner)) {
                         System.out.println("Sign In successful");
                     } else {
                         System.out.println("Sign In failed");
                     }
-                    break;
+                }
             		
-            	case 2:
-            		break;
+            	case 2 -> {
+                    if (signUp(scanner)) {
+                        System.out.println("Sign Up successful");
+                    } else {
+                        System.out.println("Sign Up failed");
+                    }
+                }
             }
             scanner.close();
         }
@@ -49,38 +56,56 @@ public class Main {
         System.out.println("0) Exit");
     }
 
-    private static String readLine() {
+    private static String readLine(Scanner scanner) {
         if (!scanner.hasNextLine()) {
             return null;
         }
         return scanner.nextLine();
     }
 
-    private static boolean signIn() {
+    private static boolean signIn(Scanner scanner) {
         System.out.println("Sign In");
         System.out.println("Please enter your username:");
         String username = readLine(scanner);
         System.out.println("Please enter your password:");
         String password = readLine(scanner);
 
-        new File("UserAccounts.txt").forEach(line -> {
-            String[] userInfo = line.split(";");
-            if (userInfo[0].equals(username) && userInfo[1].equals(password)) {
-                if (userInfo[2].equals("admin")) {
-                    AdminCLI.run(consoleInput);
-                } else {
-                    CustomerCLI.run(consoleInput);
+        File userFile = new File("UserAccounts.txt");
+        if (!userFile.exists()) {
+            return false;
+        }
+
+        try (Scanner fileScanner = new Scanner(userFile)) {
+            while (fileScanner.hasNextLine()) {
+                String line = fileScanner.nextLine().trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+                String[] userInfo = line.split(";");
+                if (userInfo.length >= 3 && userInfo[1].equals(username) && userInfo[2].equals(password)) {
+                    if (userInfo[3].equals("admin")) {
+                        AdminCLI.run(scanner);
+                    } else {
+                        CustomerCLI.run(scanner);
+                    }
+                    return true;
                 }
             }
-        });
+        } 
+        catch (FileNotFoundException e) {
+            return false;
+        }
+        return false;
     }
 
-    private static boolean signUp() {
+    private static boolean signUp(Scanner scanner) {
         System.out.println("Sign Up");
         System.out.println("Please enter your desired username:");
         String username = readLine(scanner);
+        System.out.println("Please enter your desired password:");
+        String password = readLine(scanner);
         System.out.println("Please enter your house number:");
-        String houseNumber = readLine(scanner);    
+        String houseNumber = readLine(scanner);
         System.out.println("Please enter your postcode:");
         String postcode = readLine(scanner);
         System.out.println("Please enter your city:");
@@ -88,24 +113,36 @@ public class Main {
         System.out.println("Please enter your role:");
         String role = readLine(scanner);
 
-        Integer id = getIDFromFile("UserAccounts.txt") + 1;
-        FileWriter userAccounts = new FileWriter("UserAccounts.txt");
-        userAccounts.write(username + ";" + houseNumber + ";" + postcode + ";" + city + ";" + role);
+        int id = getIDFromFile() + 1;
+
+        try (FileWriter userWriter = new FileWriter("UserAccounts.txt", true)) {
+            userWriter.write(id + ";" + username + ";" + password + ";" + houseNumber + ";" + postcode + ";" + city + ";" + role + System.lineSeparator());
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
     }
 
-    private static Integer getIDFromFile(String filename) {
-        File userAccounts = new File ("UserAccounts.txt");
-        Scanner userReader = null;
-		try {
-			userReader = new Scanner(userAccounts);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-        String lastLine = "";
-        while (userReader.hasNextLine()) {
-            lastLine = userReader.nextLine();
+    private static Integer getIDFromFile() {
+        File userAccounts = new File("UserAccounts.txt");
+        if (!userAccounts.exists()) {
+            return 0;
         }
-        String[] userInfo = lastLine.split(";");
-        return Integer.parseInt(userInfo[0]);   
+        try (Scanner userReader = new Scanner(userAccounts)) {
+            String lastLine = "";
+            while (userReader.hasNextLine()) {
+                lastLine = userReader.nextLine();
+            }
+            if (lastLine.trim().isEmpty()) {
+                return 0;
+            }
+            String[] userInfo = lastLine.split(";");
+            if (userInfo.length > 0) {
+                return Integer.valueOf(userInfo[0]);
+            }
+            return 0;
+        } catch (Exception e) {
+            return 0;
+        }
     }
 }

@@ -17,29 +17,31 @@ public class AdminCLI {
         	int selection = Integer.parseInt(consoleInput.nextLine().trim());
         	
         	switch (selection) {
-        		case 1:
-        			System.out.println(NOT_IMPLEMENTED);
-        			System.out.println();
-        			break;
+        		case 1 -> {
+                            System.out.println(NOT_IMPLEMENTED);
+                            System.out.println();
+                    }
         		
-        		case 2:
-        			//The order of the input should follow the order appearing in the Stock.txt file
-        			//read data one entry at a time.
-        			for (int i=1;i<9;i++) {
-        				System.out.println("input parameter" + i);
-        				consoleInput.nextLine();
-        				
-        			}
-        			System.out.println(NOT_IMPLEMENTED);
-        			System.out.println();
-        			break;
+        		case 2 -> {
+                            //The order of the input should follow the order appearing in the Stock.txt file
+                            //read data one entry at a time.
+                            for (int i=1;i<9;i++) {
+                                System.out.println("input parameter" + i);
+                                consoleInput.nextLine();
+                                
+                            }
+                            System.out.println(NOT_IMPLEMENTED);
+                            System.out.println();
+                    }
         			
-        		case 0:
-        			return;
+        		case 0 -> {
+                            return;
+                    }
         			
-        		default:
-        			System.out.println(INVALID);
-        			System.out.println();
+        		default -> {
+                            System.out.println(INVALID);
+                            System.out.println();
+                    }
         	}
         }
     }
