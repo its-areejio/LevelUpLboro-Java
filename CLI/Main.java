@@ -2,20 +2,21 @@ package CLI;
 
 import java.util.Scanner;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.FileNotFoundException;
 
 public class Main {
 
     public static void main(String[] args) {
-
-        Scanner consoleInput = new Scanner(System.in);
+    	
+        Scanner scanner = new Scanner(System.in);
 
         System.out.println("WELCOME");
         
         while (true) {
             printWelcomeMenu();
 
-            String line = consoleInput.nextLine().trim();
+            String line = scanner.nextLine().trim();
 
             int selection = Integer.parseInt(line.trim());
 
@@ -37,36 +38,32 @@ public class Main {
             	case 2:
             		break;
             }
+            scanner.close();
         }
-
-        scanner.close();
     }
 
     private static void printWelcomeMenu() {
-
-        // Replace placeholders with enumeration of existing users (1..n)
         System.out.println("PLEASE SELECT ONE OF THE FOLLOWING:");
         System.out.println("1) Sign In");
         System.out.println("2) Sign Up");
         System.out.println("0) Exit");
     }
 
-    private static String readLine(Scanner consoleInput) {
-        if (!consoleInput.hasNextLine()) {
+    private static String readLine() {
+        if (!scanner.hasNextLine()) {
             return null;
         }
-        return consoleInput.nextLine();
+        return scanner.nextLine();
     }
 
     private static boolean signIn() {
-        Systen.out.println("Sign In");
+        System.out.println("Sign In");
         System.out.println("Please enter your username:");
-        String username = readLine(consoleInput);
+        String username = readLine(scanner);
         System.out.println("Please enter your password:");
-        String password = readLine(consoleInput);
-        File userAccounts = openFile("UserAccounts.txt");
+        String password = readLine(scanner);
 
-        openFile("UserAccounts.txt").forEach(line -> {
+        new File("UserAccounts.txt").forEach(line -> {
             String[] userInfo = line.split(";");
             if (userInfo[0].equals(username) && userInfo[1].equals(password)) {
                 if (userInfo[2].equals("admin")) {
@@ -81,29 +78,32 @@ public class Main {
     private static boolean signUp() {
         System.out.println("Sign Up");
         System.out.println("Please enter your desired username:");
-        String username = readLine(consoleInput);
+        String username = readLine(scanner);
         System.out.println("Please enter your house number:");
-        String houseNumber = readLine(consoleInput);    
+        String houseNumber = readLine(scanner);    
         System.out.println("Please enter your postcode:");
-        String postcode = readLine(consoleInput);
+        String postcode = readLine(scanner);
         System.out.println("Please enter your city:");
-        String city = readLine(consoleInput);
+        String city = readLine(scanner);
         System.out.println("Please enter your role:");
-        String role = readLine(consoleInput);
+        String role = readLine(scanner);
 
-        Integer currentUserID = getIDFromFile("UserAccounts.txt") + 1;
-
-        File userAccounts = openFile("UserAccounts.txt");
-        id = getIDFromFile("UserAccounts.txt") + 1;
+        Integer id = getIDFromFile("UserAccounts.txt") + 1;
+        FileWriter userAccounts = new FileWriter("UserAccounts.txt");
         userAccounts.write(username + ";" + houseNumber + ";" + postcode + ";" + city + ";" + role);
     }
 
     private static Integer getIDFromFile(String filename) {
-        //READ LAST LINE FROM FILE AND EXTRACT ID
-        File userAccounts = openFile("UserAccounts.txt");
+        File userAccounts = new File ("UserAccounts.txt");
+        Scanner userReader = null;
+		try {
+			userReader = new Scanner(userAccounts);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
         String lastLine = "";
-        while (userAccounts.hasNextLine()) {
-            lastLine = userAccounts.nextLine();
+        while (userReader.hasNextLine()) {
+            lastLine = userReader.nextLine();
         }
         String[] userInfo = lastLine.split(";");
         return Integer.parseInt(userInfo[0]);   
