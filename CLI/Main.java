@@ -4,9 +4,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Scanner;
 
 public class Main {
+    private static final Path UserAccountsData = Paths.get("Data", "UserAccounts.txt");
 
     public static void main(String[] args) {
     	
@@ -45,7 +48,6 @@ public class Main {
                     }
                 }
             }
-            scanner.close();
         }
     }
 
@@ -70,10 +72,7 @@ public class Main {
         System.out.println("Please enter your password:");
         String password = readLine(scanner);
 
-        File userFile = new File("UserAccounts.txt");
-        if (!userFile.exists()) {
-            return false;
-        }
+        File userFile = UserAccountsData.toFile();
 
         try (Scanner fileScanner = new Scanner(userFile)) {
             while (fileScanner.hasNextLine()) {
@@ -82,8 +81,14 @@ public class Main {
                     continue;
                 }
                 String[] userInfo = line.split(";");
-                if (userInfo.length >= 3 && userInfo[1].equals(username) && userInfo[2].equals(password)) {
-                    if (userInfo[3].equals("admin")) {
+                if (userInfo.length < 7) {
+                    continue;
+                }
+                String fileUsername = userInfo[1];
+                String filePassword = userInfo[2];
+                String fileRole = userInfo[6];
+                if (fileUsername.equals(username) && filePassword.equals(password)) {
+                    if (fileRole.equalsIgnoreCase("admin")) {
                         AdminCLI.run(scanner);
                     } else {
                         CustomerCLI.run(scanner);
@@ -91,8 +96,7 @@ public class Main {
                     return true;
                 }
             }
-        } 
-        catch (FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             return false;
         }
         return false;
@@ -115,7 +119,7 @@ public class Main {
 
         int id = getIDFromFile() + 1;
 
-        try (FileWriter userWriter = new FileWriter("UserAccounts.txt", true)) {
+        try (FileWriter userWriter = new FileWriter("../Data/UserAccounts.txt", true)) {
             userWriter.write(id + ";" + username + ";" + password + ";" + houseNumber + ";" + postcode + ";" + city + ";" + role + System.lineSeparator());
         } catch (IOException e) {
             return false;
@@ -124,7 +128,7 @@ public class Main {
     }
 
     private static Integer getIDFromFile() {
-        File userAccounts = new File("UserAccounts.txt");
+        File userAccounts = new File("../Data/UserAccounts.txt");
         if (!userAccounts.exists()) {
             return 0;
         }
