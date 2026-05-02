@@ -23,58 +23,11 @@ public class AdminCLI {
         	
         	switch (selection) {
         		case 1 -> {
-                    File stockFile = StockData.toFile();
-                    HashMap<Float, Integer> productInfo = new HashMap<>();
-                    String[] products = new String[0];
-                    Integer count = 0;
-                    try (Scanner stockScanner = new Scanner(stockFile)) {
-                        while (stockScanner.hasNextLine()) {
-                            String line = stockScanner.nextLine();
-                            String splitLine[] = line.split(";");
-                            productInfo.put(Float.parseFloat(splitLine[4]), Integer.parseInt(splitLine[0]));
-                            products = java.util.Arrays.copyOf(products, count + 1);
-                            products[count] = line;
-                            count++;
-                        }
-                    } catch (FileNotFoundException e) {
-                        System.out.println("Stock data file not found.");
-                    }
-                    TreeMap<Float, Integer> stockData = new TreeMap<>();
-                    stockData.putAll(productInfo);
-                    for (Float productID : stockData.keySet()) {
-                        Integer currentProductID = stockData.get(productID);
-                        for (String product : products) {
-                            String splitLine[] = product.split(";");
-                            if (Integer.parseInt(splitLine[0]) == currentProductID) {
-                                System.out.println(product);
-                            }
-                        }
-                    }
+                    readProducts();
                 }   
         		
         		case 2 -> {
-                    System.out.println("Enter ProductID of the new product:");
-                    Integer newProductID = Integer.parseInt(consoleInput.nextLine().trim());
-                    System.out.println("Enter Categoryof the new product:");
-                    String newProductCategory = consoleInput.nextLine().trim();
-                    System.out.println("Enter Name of the new product:");
-                    String newProductName = consoleInput.nextLine().trim();
-                    System.out.println("Enter Description of the new product:");
-                    String newProductDescription = consoleInput.nextLine().trim();
-                    System.out.println("Enter Compatibility of the new product:");
-                    String newProductCompatibility = consoleInput.nextLine().trim();
-                    System.out.println("Enter Price of the new product:");
-                    Float newProductPrice = Float.parseFloat(consoleInput.nextLine().trim());
-                    System.out.println("Enter Stock of the new product:");
-                    Integer newProductStock = Integer.parseInt(consoleInput.nextLine().trim());
-
-                    String newProduct = newProductID + ";" + newProductCategory + ";" + newProductName + ";" + newProductDescription + ";" + newProductCompatibility + ";" + newProductPrice + ";" + newProductStock+ System.lineSeparator(); 
-                    try (FileWriter stockFileWriter = new FileWriter(StockData.toFile(), true)) {
-                        stockFileWriter.write(newProduct);
-                        System.out.println("New product added successfully.");
-                    } catch (IOException e) {
-                        System.out.println(e.getMessage());
-                    }  
+                    addProduct(consoleInput);
                 }
         			
         		case 0 -> {
@@ -98,6 +51,59 @@ public class AdminCLI {
         System.out.println("0) Log out");
     }
     
+    private static void readProducts() {
+        File stockFile = StockData.toFile();
+        HashMap<Float, Integer> productInfo = new HashMap<>();
+        String[] products = new String[0];
+        Integer count = 0;
+        try (Scanner stockScanner = new Scanner(stockFile)) {
+            while (stockScanner.hasNextLine()) {
+                String line = stockScanner.nextLine();
+                String splitLine[] = line.split(";");
+                productInfo.put(Float.parseFloat(splitLine[4]), Integer.parseInt(splitLine[0]));
+                products = java.util.Arrays.copyOf(products, count + 1);
+                products[count] = line;
+                count++;
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("Stock data file not found.");
+        }
+        TreeMap<Float, Integer> stockData = new TreeMap<>();
+        stockData.putAll(productInfo);
+        for (Float productID : stockData.keySet()) {
+            Integer currentProductID = stockData.get(productID);
+            for (String product : products) {
+                String splitLine[] = product.split(";");
+                if (Integer.parseInt(splitLine[0]) == currentProductID) {
+                    System.out.println(product);
+                }
+            }
+        }
+    }
     
+    private static void addProduct(Scanner consoleInput) {
+        System.out.println("Enter ProductID of the new product:");
+        Integer newProductID = Integer.parseInt(consoleInput.nextLine().trim());
+        System.out.println("Enter Categoryof the new product:");
+        String newProductCategory = consoleInput.nextLine().trim();
+        System.out.println("Enter Name of the new product:");
+        String newProductName = consoleInput.nextLine().trim();
+        System.out.println("Enter Description of the new product:");
+        String newProductDescription = consoleInput.nextLine().trim();
+        System.out.println("Enter Compatibility of the new product:");
+        String newProductCompatibility = consoleInput.nextLine().trim();
+        System.out.println("Enter Price of the new product:");
+        Float newProductPrice = Float.parseFloat(consoleInput.nextLine().trim());
+        System.out.println("Enter Stock of the new product:");
+        Integer newProductStock = Integer.parseInt(consoleInput.nextLine().trim());
+
+        String newProduct = newProductID + ";" + newProductCategory + ";" + newProductName + ";" + newProductDescription + ";" + newProductCompatibility + ";" + newProductPrice + ";" + newProductStock+ System.lineSeparator(); 
+        try (FileWriter stockFileWriter = new FileWriter(StockData.toFile(), true)) {
+            stockFileWriter.write(newProduct);
+            System.out.println("New product added successfully.");
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }  
+    }
     
 }
