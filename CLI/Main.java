@@ -55,7 +55,7 @@ public class Main {
         System.out.println("PLEASE SELECT ONE OF THE FOLLOWING:");
         System.out.println("1) Sign In");
         System.out.println("2) Sign Up");
-        System.out.println("0) Exit");
+        System.out.println("0) Exit"); 
     }
 
     private static String readLine(Scanner scanner) {
@@ -97,8 +97,10 @@ public class Main {
                 }
             }
         } catch (FileNotFoundException e) {
+            System.out.println("User accounts file not found.");
             return false;
         }
+        System.out.println("Invalid username or password.");
         return false;
     }
 
@@ -118,9 +120,10 @@ public class Main {
         String role = readLine(scanner);
 
         int id = getIDFromFile() + 1;
+        String newUser = id + ";" + username + ";" + password + ";" + houseNumber + ";" + postcode + ";" + city + ";" + role + System.lineSeparator();
 
         try (FileWriter userWriter = new FileWriter("../Data/UserAccounts.txt", true)) {
-            userWriter.write(id + ";" + username + ";" + password + ";" + houseNumber + ";" + postcode + ";" + city + ";" + role + System.lineSeparator());
+            userWriter.write(newUser);
         } catch (IOException e) {
             return false;
         }
