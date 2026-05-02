@@ -8,6 +8,51 @@ public class CustomerCLI {
 
         System.out.println("CUSTOMER VIEW");
         printCustomerMenu();
+
+        while (true) {
+            printCustomerMenu();
+
+            int selection = Integer.parseInt(consoleInput.nextLine().trim());
+
+            switch (selection) {
+                case 1 -> {
+                    readProducts();
+                }
+
+                case 2 -> {
+                    addProduct(consoleInput);
+                }
+
+                case 3 -> {
+                    viewBasket();
+                }
+
+                case 4 -> {
+                    purchaseItems();
+                }
+
+                case 5 -> {
+                    cancelBasket();
+                }
+
+                case 6 -> {
+                    lookupProduct();
+                }
+
+                case 7 -> {
+                    searchFilter();
+                }
+
+                case 0 -> {
+                    return;
+                }
+
+                default -> {
+                    System.out.println("Invalid input");
+                    System.out.println();
+                }
+            }
+        }
     }
     
     private static void printCustomerMenu() {
@@ -21,5 +66,40 @@ public class CustomerCLI {
         System.out.println("7) Search/filter based on compatilbility");
 
         System.out.println("0) Log out");
+    }
+
+    private static void readProducts() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    private static void addProduct(Scanner consoleInput) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    private static void viewBasket() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    private static void purchaseItems() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    private static void cancelBasket() {
+        // TODO Auto-generated method stub
+        
+    }   
+
+    private static void lookupProduct() {
+        // TODO Auto-generated method stub
+        
+    }   
+
+    private static void searchFilter() {
+        // TODO Auto-generated method stub
+        
     }
 }
