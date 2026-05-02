@@ -44,7 +44,6 @@ public class AdminCLI {
     
     
     private static void printAdminMenu() {
-
         System.out.println("PLEASE SELECT ACTION BY INPUTTING THE CORRESPONDING NUMBER (or 0 for logout)");
         System.out.println("1) View all products");
         System.out.println("2) Add new product");
