@@ -31,8 +31,8 @@ public class AdminCLI {
                 }
         			
         		case 0 -> {
-                            return;
-                    }
+                    return;
+                }
         			
         		default -> {
                             System.out.println("Invalid input");
