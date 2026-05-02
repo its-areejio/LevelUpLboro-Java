@@ -50,6 +50,7 @@ public class AdminCLI {
         System.out.println("0) Log out");
     }
     
+    @SuppressWarnings("UnnecessaryTemporaryOnConversionFromString")
     private static void readProducts() {
         File stockFile = StockData.toFile();
         HashMap<Float, Integer> productInfo = new HashMap<>();
@@ -82,6 +83,7 @@ public class AdminCLI {
     
     private static void addProduct(Scanner consoleInput) {
         System.out.println("Enter ProductID of the new product:");
+        @SuppressWarnings("UnnecessaryTemporaryOnConversionFromString")
         Integer newProductID = Integer.parseInt(consoleInput.nextLine().trim());
         System.out.println("Enter Categoryof the new product:");
         String newProductCategory = consoleInput.nextLine().trim();
@@ -92,8 +94,10 @@ public class AdminCLI {
         System.out.println("Enter Compatibility of the new product:");
         String newProductCompatibility = consoleInput.nextLine().trim();
         System.out.println("Enter Price of the new product:");
+        @SuppressWarnings("UnnecessaryTemporaryOnConversionFromString")
         Float newProductPrice = Float.parseFloat(consoleInput.nextLine().trim());
         System.out.println("Enter Stock of the new product:");
+        @SuppressWarnings("UnnecessaryTemporaryOnConversionFromString")
         Integer newProductStock = Integer.parseInt(consoleInput.nextLine().trim());
 
         String newProduct = newProductID + ";" + newProductCategory + ";" + newProductName + ";" + newProductDescription + ";" + newProductCompatibility + ";" + newProductPrice + ";" + newProductStock+ System.lineSeparator(); 
