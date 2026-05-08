@@ -49,7 +49,6 @@ public class AdminCLI {
         System.out.println("0) Log out");
     }
     
-    @SuppressWarnings("UnnecessaryTemporaryOnConversionFromString")
     private static void readProducts() {
         File stockFile = StockData.toFile();
         HashMap<Float, Integer> productInfo = new HashMap<>();

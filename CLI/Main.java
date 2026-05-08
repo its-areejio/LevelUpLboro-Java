@@ -13,14 +13,14 @@ public class Main {
 
     public static void main(String[] args) {
     	
-        Scanner scanner = new Scanner(System.in);
+        Scanner consoleInput = new Scanner(System.in);
 
         System.out.println("WELCOME");
         
         while (true) {
             printWelcomeMenu();
 
-            String line = scanner.nextLine().trim();
+            String line = consoleInput.nextLine().trim();
 
             int selection = Integer.parseInt(line.trim());
 
@@ -33,7 +33,8 @@ public class Main {
                 }
             		
             	case 1 -> {
-                    if (signIn(scanner)) {
+                    String username = signIn(consoleInput);
+                    if (username != null) {
                         System.out.println("Sign In successful");
                     } else {
                         System.out.println("Sign In failed");
@@ -41,7 +42,7 @@ public class Main {
                 }
             		
             	case 2 -> {
-                    if (signUp(scanner)) {
+                    if (signUp(consoleInput)) {
                         System.out.println("Sign Up successful");
                     } else {
                         System.out.println("Sign Up failed");
@@ -58,19 +59,19 @@ public class Main {
         System.out.println("0) Exit"); 
     }
 
-    private static String readLine(Scanner scanner) {
-        if (!scanner.hasNextLine()) {
+    private static String readLine(Scanner consoleInput) {
+        if (!consoleInput.hasNextLine()) {
             return null;
         }
-        return scanner.nextLine();
+        return consoleInput.nextLine();
     }
 
-    private static boolean signIn(Scanner scanner) {
+    private static String signIn(Scanner consoleInput) {
         System.out.println("Sign In");
         System.out.println("Please enter your username:");
-        String username = readLine(scanner);
+        String username = readLine(consoleInput);
         System.out.println("Please enter your password:");
-        String password = readLine(scanner);
+        String password = readLine(consoleInput);
 
         File userFile = UserAccountsData.toFile();
 
@@ -89,35 +90,35 @@ public class Main {
                 String fileRole = userInfo[6];
                 if (fileUsername.equals(username) && filePassword.equals(password)) {
                     if (fileRole.equalsIgnoreCase("admin")) {
-                        AdminCLI.run(scanner);
+                        AdminCLI.run(consoleInput);
                     } else {
-                        CustomerCLI.run(scanner);
+                        CustomerCLI.run(username, consoleInput);
                     }
-                    return true;
+                    return userInfo[1];
                 }
             }
         } catch (FileNotFoundException e) {
             System.out.println("User accounts file not found.");
-            return false;
+            return null;
         }
         System.out.println("Invalid username or password.");
-        return false;
+        return null;
     }
 
-    private static boolean signUp(Scanner scanner) {
+    private static boolean signUp(Scanner consoleInput) {
         System.out.println("Sign Up");
         System.out.println("Please enter your desired username:");
-        String username = readLine(scanner);
+        String username = readLine(consoleInput);
         System.out.println("Please enter your desired password:");
-        String password = readLine(scanner);
+        String password = readLine(consoleInput);
         System.out.println("Please enter your house number:");
-        String houseNumber = readLine(scanner);
+        String houseNumber = readLine(consoleInput);
         System.out.println("Please enter your postcode:");
-        String postcode = readLine(scanner);
+        String postcode = readLine(consoleInput);
         System.out.println("Please enter your city:");
-        String city = readLine(scanner);
+        String city = readLine(consoleInput);
         System.out.println("Please enter your role:");
-        String role = readLine(scanner);
+        String role = readLine(consoleInput);
 
         int id = getIDFromFile() + 1;
         String newUser = id + ";" + username + ";" + password + ";" + houseNumber + ";" + postcode + ";" + city + ";" + role + System.lineSeparator();
@@ -125,6 +126,7 @@ public class Main {
         try (FileWriter userWriter = new FileWriter("../Data/UserAccounts.txt", true)) {
             userWriter.write(newUser);
         } catch (IOException e) {
+            System.out.println(e.getMessage());
             return false;
         }
         return true;
@@ -149,6 +151,7 @@ public class Main {
             }
             return 0;
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return 0;
         }
     }
