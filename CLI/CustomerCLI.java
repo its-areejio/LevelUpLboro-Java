@@ -2,6 +2,8 @@ package CLI;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Dictionary;
@@ -123,11 +125,15 @@ public class CustomerCLI {
             while (stockScanner.hasNextLine()) {
                 String line = stockScanner.nextLine();
                 String splitLine[] = line.split(";");
-                if (splitLine[0].equals(productID)) {
+                if (splitLine[0].equals(productID) && Integer.parseInt(splitLine[5]) > 0) {
                     basket.put(Integer.parseInt(splitLine[0]), Float.parseFloat(splitLine[4]));
                     System.out.println("Product added to shopping basket.");
                     return basket;
                 }
+                else if (splitLine[0].equals(productID) && Integer.parseInt(splitLine[5]) == 0) {
+                    System.out.println("Product is out of stock, try again later.");
+                    return basket;
+            }
             }
             System.out.println("Product not found.");
         } catch (FileNotFoundException e) {
@@ -150,13 +156,39 @@ public class CustomerCLI {
         for (java.util.Enumeration<Integer> keys = basket.keys(); keys.hasMoreElements();) {
             Integer key = keys.nextElement();
             price += basket.get(key);
+            File stockFile = StockData.toFile();
+            StringBuilder newStockData = new StringBuilder();
+            try (Scanner stockScanner = new Scanner(stockFile)) {
+                while (stockScanner.hasNextLine()) {
+                    String line = stockScanner.nextLine();
+                    String splitLine[] = line.split(";");
+                    if (Integer.parseInt(splitLine[0]) == key) {
+                        int newStock = Integer.parseInt(splitLine[5]) - 1;
+                        if (newStock > 0) {
+                            splitLine[5] = String.valueOf(newStock);
+                            line = String.join(";", splitLine);
+                            newStockData.append(line).append(System.lineSeparator());
+                        }
+                        // else remove, don't append
+                    } else {
+                        System.out.println("This item is not in stock. Please try again later.");
+                        newStockData.append(line).append(System.lineSeparator());
+                    }
+                }
+            } catch (FileNotFoundException e) {
+                System.out.println(e.getMessage());
+            }
+            try (FileWriter writer = new FileWriter(stockFile)) {
+                writer.write(newStockData.toString());
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
         } 
 
         if (paymentMethod.equalsIgnoreCase("PayPal")) {
             System.out.println("Enter your email address");
             String email = consoleInput.nextLine().trim();    
             System.out.println(String.valueOf(price) + " paid via PayPal using " + email + " on " + java.time.LocalDate.now() + ". Billing address:" + billingAddress);
-            //UPDATE STOCK
             return;
         } else if (paymentMethod.equalsIgnoreCase("Card")) {
             System.out.println("Enter your card number:");
