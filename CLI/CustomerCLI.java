@@ -1,241 +1,212 @@
 package CLI;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Dictionary;
-import java.util.HashMap;
-import java.util.Hashtable;
+import Classes.Address;
+import Classes.CardPayment;
+import Classes.PayPalPayment;
+import Classes.PaymentMethod;
+import Classes.Product;
+import Classes.Receipt;
+import Classes.ShoppingBasket;
+import Classes.StockManager;
+import java.util.List;
 import java.util.Scanner;
-import java.util.TreeMap;
 
 public class CustomerCLI {
-    private static final Path UserAccountsData = Paths.get("Data", "UserAccounts.txt");
-    private static final Path StockData = Paths.get("Data", "Stock.txt");
+    private final List<Product> products;
+    private final ShoppingBasket basket;
+    private final Scanner consoleInput;
 
-    public static void run(String username, Scanner consoleInput) {
+    public CustomerCLI(Scanner consoleInput) {
+        this.consoleInput = consoleInput;
+        this.products = StockManager.loadProducts();
+        this.basket = new ShoppingBasket();
+    }
 
+    public void run() {
         System.out.println("CUSTOMER VIEW");
-        Dictionary<Integer, Float> basket = new Hashtable<>();
-
         while (true) {
             printCustomerMenu();
-
-            int selection = Integer.parseInt(consoleInput.nextLine().trim());
-
+            int selection = readInt("Select an option:");
             switch (selection) {
-                case 1 -> {
-                    readProducts();
-                }
-
-                case 2 -> {
-                    basket = addProduct(consoleInput, basket);
-                }
-
-                case 3 -> {
-                    viewBasket(basket);
-                }
-
-                case 4 -> {
-                    purchaseItems(consoleInput, basket, username);
-                    basket = cancelBasket(basket);
-                }
-
-                case 5 -> {
-                    basket = cancelBasket(basket);
-                }
-
-                case 6 -> {
-                    lookupID(consoleInput);
-                }
-
-                case 7 -> {
-                    lookupCompatibility(consoleInput);
-                }
-
+                case 1 -> viewProducts();
+                case 2 -> addProductToBasket();
+                case 3 -> viewBasket();
+                case 4 -> purchaseItems();
+                case 5 -> cancelBasket();
+                case 6 -> lookupProductById();
+                case 7 -> lookupCompatibility();
                 case 0 -> {
+                    System.out.println("Returning to main menu.");
                     return;
                 }
-
-                default -> {
-                    System.out.println("Invalid input");
-                    System.out.println();
-                }
+                default -> System.out.println("Invalid input. Please try again.");
             }
         }
     }
-    
-    private static void printCustomerMenu() {
+
+    private void printCustomerMenu() {
         System.out.println("PLEASE SELECT ACTION BY INPUTTING THE CORRESPONDING NUMBER (or 0 for logout)");
         System.out.println("1) View all products");
         System.out.println("2) Add product to shopping basket");
         System.out.println("3) View contents of shopping basket");
         System.out.println("4) Purchase items in the basket");
         System.out.println("5) Cancel shopping basket");
-        System.out.println("6) Lookup with product ID");
-        System.out.println("7) Search/filter based on compatilbility");
+        System.out.println("6) Lookup product by ID");
+        System.out.println("7) Search/filter based on compatibility");
         System.out.println("0) Log out");
     }
 
-    private static void readProducts() {
-        File stockFile = StockData.toFile();
-        HashMap<Float, Integer> productInfo = new HashMap<>();
-        String[] products = new String[0];
-        Integer count = 0;
-        try (Scanner stockScanner = new Scanner(stockFile)) {
-            while (stockScanner.hasNextLine()) {
-                String line = stockScanner.nextLine();
-                String splitLine[] = line.split(";");
-                productInfo.put(Float.parseFloat(splitLine[4]), Integer.parseInt(splitLine[0]));
-                products = java.util.Arrays.copyOf(products, count + 1);
-                StringBuilder product = new StringBuilder();
-                for (int i = 0; i < splitLine.length; i++) {
-                    if (i != 6) {
-                        if (product.length() > 0) product.append(";");
-                        product.append(splitLine[i]);
-                    }
-                }
-                products[count] = product.toString();
-                count++;
-            }
-        } catch (FileNotFoundException e) {
-            System.out.println(e.getMessage());
+    private void viewProducts() {
+        if (products.isEmpty()) {
+            System.out.println("No products are currently available.");
+            return;
         }
-        TreeMap<Float, Integer> stockData = new TreeMap<>();
-        stockData.putAll(productInfo);
-        for (Float productID : stockData.keySet()) {
-            Integer currentProductID = stockData.get(productID);
-            for (String product : products) {
-                String splitLine[] = product.split(";");
-                if (Integer.parseInt(splitLine[0]) == currentProductID) {
-                    System.out.println(product);
-                }
-            }
-        }
+        products.stream()
+                .sorted((a, b) -> Integer.compare(a.getProductId(), b.getProductId()))
+                .forEach(System.out::println);
     }
 
-    private static Dictionary<Integer, Float> addProduct(Scanner consoleInput, Dictionary<Integer, Float> basket) {
-        System.out.println("Enter the ProductID of the product you want to add to your shopping basket:");
-        String productID = consoleInput.nextLine().trim();
-        File stockFile = StockData.toFile();
-        try (Scanner stockScanner = new Scanner(stockFile)) {
-            while (stockScanner.hasNextLine()) {
-                String line = stockScanner.nextLine();
-                String splitLine[] = line.split(";");
-                if (splitLine[0].equals(productID)) {
-                    basket.put(Integer.parseInt(splitLine[0]), Float.parseFloat(splitLine[4]));
-                    System.out.println("Product added to shopping basket.");
-                    return basket;
-                }
-            }
+    private void addProductToBasket() {
+        int id = readInt("Enter the ProductID of the product you want to add to your shopping basket:");
+        Product product = findProduct(id);
+        if (product == null) {
             System.out.println("Product not found.");
-        } catch (FileNotFoundException e) {
-            System.out.println(e.getMessage());
+            return;
         }
-        return basket;
+        int quantity = readInt("Enter the quantity you want to add:");
+        if (quantity <= 0) {
+            System.out.println("Quantity must be positive.");
+            return;
+        }
+        if (product.getQuantityInStock() < quantity) {
+            System.out.println("There are only " + product.getQuantityInStock() + " units available.");
+            return;
+        }
+        for (int i = 0; i < quantity; i++) {
+            basket.addItem(product);
+        }
+        System.out.println(quantity + " unit(s) added to your shopping basket.");
     }
 
-    private static void viewBasket(Dictionary<Integer, Float> basket) {
-        System.out.println(basket);
-        return;
+    private void viewBasket() {
+        if (basket.isEmpty()) {
+            System.out.println("Your shopping basket is empty.");
+            return;
+        }
+        basket.getBasketSummary().forEach(System.out::println);
+        System.out.printf("Total: £%.2f%n", basket.calculateTotal());
     }
 
-    private static void purchaseItems(Scanner consoleInput, Dictionary<Integer, Float> basket, String username) {
-        System.out.println("Would you like to pay by PayPal or card? (Enter 'PayPal' or 'Card')");
-        String paymentMethod = consoleInput.nextLine().trim();
-
-        String billingAddress = getBillingAddress(username, UserAccountsData.toFile());
-        Float price = 0.0f;
-        for (java.util.Enumeration<Integer> keys = basket.keys(); keys.hasMoreElements();) {
-            Integer key = keys.nextElement();
-            price += basket.get(key);
-        } 
-
-        if (paymentMethod.equalsIgnoreCase("PayPal")) {
-            System.out.println("Enter your email address");
-            String email = consoleInput.nextLine().trim();    
-            System.out.println(String.valueOf(price) + " paid via PayPal using " + email + " on " + java.time.LocalDate.now() + ". Billing address:" + billingAddress);
-            //UPDATE STOCK
+    private void purchaseItems() {
+        if (basket.isEmpty()) {
+            System.out.println("Your basket is empty. Add some products before purchasing.");
             return;
-        } else if (paymentMethod.equalsIgnoreCase("Card")) {
-            System.out.println("Enter your card number:");
-            String cardNumber = consoleInput.nextLine().trim();
-            System.out.println("Enter your 3-digit security code:");
-            String securityCode = consoleInput.nextLine().trim();   
-            System.out.println(String.valueOf(price) + " paid via Credit Card " + cardNumber + " on " + java.time.LocalDate.now() + ". Billing address:" + billingAddress);
+        }
+        viewBasket();
+        String houseNumber = readLine("Enter your house number:");
+        String postcode = readLine("Enter your postcode:");
+        String city = readLine("Enter your city:");
+        Address address;
+        try {
+            address = new Address(houseNumber, postcode, city);
+        } catch (IllegalArgumentException ex) {
+            System.out.println("Invalid address: " + ex.getMessage());
             return;
+        }
+        String method = readLine("Would you like to pay by PayPal or Card? (Enter PayPal or Card):");
+        PaymentMethod paymentMethod;
+        if (method.equalsIgnoreCase("PayPal")) {
+            String email = readLine("Enter your PayPal email address:");
+            try {
+                paymentMethod = new PayPalPayment(email);
+            } catch (IllegalArgumentException ex) {
+                System.out.println("Invalid PayPal payment details: " + ex.getMessage());
+                return;
+            }
+        } else if (method.equalsIgnoreCase("Card")) {
+            String cardNumber = readLine("Enter your card number:");
+            String securityCode = readLine("Enter your 3- or 4-digit security code:");
+            try {
+                paymentMethod = new CardPayment(cardNumber, securityCode);
+            } catch (IllegalArgumentException ex) {
+                System.out.println("Invalid card payment details: " + ex.getMessage());
+                return;
+            }
         } else {
             System.out.println("Invalid payment method.");
             return;
         }
-    }
 
-    private static String getBillingAddress(String username, File userFile) {
-        try (Scanner fileScanner = new Scanner(userFile)) {
-            while (fileScanner.hasNextLine()) {
-                String line = fileScanner.nextLine().trim();
-                if (line.isEmpty()) {
-                    continue;
-                }
-                String[] userInfo = line.split(";");
-                if (userInfo.length < 7) {
-                    continue;
-                }
-                String fileUsername = userInfo[1];
-                if (fileUsername.equals(username)) {
-                    return userInfo[3] + " " + userInfo[4] + " " + userInfo[5];
-                }
+        for (var entry : basket.getItems().entrySet()) {
+            Product product = entry.getKey();
+            int quantity = entry.getValue();
+            if (product.getQuantityInStock() < quantity) {
+                System.out.println("Unable to complete purchase because " + product.getProductName()
+                        + " only has " + product.getQuantityInStock() + " units available.");
+                return;
             }
-        } catch (FileNotFoundException e) {
-            System.out.println("User accounts file not found.");
-            return null;
         }
-        System.out.println("User not found.");
-        return null;
+
+        basket.getItems().forEach((product, count) -> product.setQuantityInStock(product.getQuantityInStock() - count));
+        StockManager.saveProducts(products);
+
+        Receipt receipt = paymentMethod.processPayment(basket.calculateTotal(), address);
+        System.out.println(receipt);
+        basket.clear();
     }
 
-    private static Dictionary<Integer, Float> cancelBasket( Dictionary<Integer, Float> basket) {
-        System.out.println("Cancelling shopping basket...");
-        basket = new Hashtable<>();
-        return basket;
-    }   
+    private void cancelBasket() {
+        if (basket.isEmpty()) {
+            System.out.println("Your shopping basket is already empty.");
+            return;
+        }
+        basket.clear();
+        System.out.println("Shopping basket cancelled.");
+    }
 
-    private static void lookupID(Scanner consoleInput) {
-        System.out.println("Enter the ProductID of the product you want to lookup:");
-        String productID = consoleInput.nextLine().trim();
-        File stockFile = StockData.toFile();
-        try (Scanner stockScanner = new Scanner(stockFile)) {
-            while (stockScanner.hasNextLine()) {
-                String line = stockScanner.nextLine();
-                String splitLine[] = line.split(";");
-                if (splitLine[0].equals(productID)) {
-                    System.out.println(line);
-                    return;
-                }
-            }
+    private void lookupProductById() {
+        int id = readInt("Enter the ProductID of the product you want to lookup:");
+        Product product = findProduct(id);
+        if (product == null) {
             System.out.println("Product not found.");
-        } catch (FileNotFoundException e) {
-            System.out.println(e.getMessage());
+        } else {
+            System.out.println(product);
         }
-    }   
+    }
 
-    private static void lookupCompatibility(Scanner consoleInput) {
-        System.out.println("What game's accessories are you looking for? (Enter the name of the game)");
-        String game = consoleInput.nextLine().trim();
-        File stockFile = StockData.toFile();
-        try (Scanner stockScanner = new Scanner(stockFile)) {
-            while (stockScanner.hasNextLine()) {
-                String line = stockScanner.nextLine();
-                String splitLine[] = line.split(";");
-                if (splitLine[1].equalsIgnoreCase("accessory") && splitLine[6].equalsIgnoreCase(game)) {
-                    System.out.println(line);
-                    return;
-                }
-            }
-            System.out.println("There are no products compatible with that game.");
-        } catch (FileNotFoundException e) {
-            System.out.println(e.getMessage());
+    private void lookupCompatibility() {
+        String search = readLine("Enter a compatibility keyword (game name, universal, etc.):");
+        List<Product> matches = products.stream()
+                .filter(product -> product.getCompatibility().toLowerCase().contains(search.toLowerCase()))
+                .toList();
+        if (matches.isEmpty()) {
+            System.out.println("No products found matching that compatibility.");
+            return;
         }
+        matches.forEach(System.out::println);
+    }
+
+    private Product findProduct(int id) {
+        return products.stream()
+                .filter(product -> product.getProductId() == id)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private int readInt(String prompt) {
+        while (true) {
+            System.out.println(prompt);
+            String input = consoleInput.nextLine().trim();
+            try {
+                return Integer.parseInt(input);
+            } catch (NumberFormatException ex) {
+                System.out.println("Please enter a valid integer.");
+            }
+        }
+    }
+
+    private String readLine(String prompt) {
+        System.out.println(prompt);
+        return consoleInput.nextLine().trim();
     }
 }

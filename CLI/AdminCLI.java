@@ -1,110 +1,114 @@
 package CLI;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
+import Classes.Accessory;
+import Classes.BoardGame;
+import Classes.Product;
+import Classes.ProductCategory;
+import Classes.StockManager;
+import java.util.List;
 import java.util.Scanner;
-import java.util.TreeMap;
 
 public class AdminCLI {
-    private static final Path StockData = Paths.get("Data", "Stock.txt");
+    private final List<Product> products;
+    private final Scanner consoleInput;
 
-    public static void run(Scanner consoleInput) {
-    	System.out.println("ADMIN VIEW");
-        
+    public AdminCLI(Scanner consoleInput) {
+        this.consoleInput = consoleInput;
+        this.products = StockManager.loadProducts();
+    }
+
+    public void run() {
+        System.out.println("ADMIN VIEW");
+
         while (true) {
-        	printAdminMenu();
-        	
-        	int selection = Integer.parseInt(consoleInput.nextLine().trim());
-        	
-        	switch (selection) {
-        		case 1 -> {
-                    readProducts();
-                }   
-        		
-        		case 2 -> {
-                    addProduct(consoleInput);
-                }
-        			
-        		case 0 -> {
+            printAdminMenu();
+            int selection = readInt("Select an option:");
+
+            switch (selection) {
+                case 1 -> viewProducts();
+                case 2 -> addNewProduct();
+                case 0 -> {
+                    System.out.println("Returning to main menu.");
                     return;
                 }
-        			
-        		default -> {
-                            System.out.println("Invalid input");
-                            System.out.println();
-                    }
-        	}
+                default -> System.out.println("Invalid input. Please try again.");
+            }
         }
     }
-    
-    private static void printAdminMenu() {
+
+    private void printAdminMenu() {
         System.out.println("PLEASE SELECT ACTION BY INPUTTING THE CORRESPONDING NUMBER (or 0 for logout)");
         System.out.println("1) View all products");
         System.out.println("2) Add new product");
         System.out.println("0) Log out");
     }
-    
-    private static void readProducts() {
-        File stockFile = StockData.toFile();
-        HashMap<Float, Integer> productInfo = new HashMap<>();
-        String[] products = new String[0];
-        Integer count = 0;
-        try (Scanner stockScanner = new Scanner(stockFile)) {
-            while (stockScanner.hasNextLine()) {
-                String line = stockScanner.nextLine();
-                String splitLine[] = line.split(";");
-                productInfo.put(Float.parseFloat(splitLine[4]), Integer.parseInt(splitLine[0]));
-                products = java.util.Arrays.copyOf(products, count + 1);
-                products[count] = line;
-                count++;
-            }
-        } catch (FileNotFoundException e) {
-            System.out.println("Stock data file not found.");
-        }
-        TreeMap<Float, Integer> stockData = new TreeMap<>();
-        stockData.putAll(productInfo);
-        for (Float productID : stockData.keySet()) {
-            Integer currentProductID = stockData.get(productID);
-            for (String product : products) {
-                String splitLine[] = product.split(";");
-                if (Integer.parseInt(splitLine[0]) == currentProductID) {
-                    System.out.println(product);
-                }
-            }
-        }
-    }
-    
-    private static void addProduct(Scanner consoleInput) {
-        System.out.println("Enter ProductID of the new product:");
-        @SuppressWarnings("UnnecessaryTemporaryOnConversionFromString")
-        Integer newProductID = Integer.parseInt(consoleInput.nextLine().trim());
-        System.out.println("Enter Categoryof the new product:");
-        String newProductCategory = consoleInput.nextLine().trim();
-        System.out.println("Enter Name of the new product:");
-        String newProductName = consoleInput.nextLine().trim();
-        System.out.println("Enter Description of the new product:");
-        String newProductDescription = consoleInput.nextLine().trim();
-        System.out.println("Enter Compatibility of the new product:");
-        String newProductCompatibility = consoleInput.nextLine().trim();
-        System.out.println("Enter Price of the new product:");
-        @SuppressWarnings("UnnecessaryTemporaryOnConversionFromString")
-        Float newProductPrice = Float.parseFloat(consoleInput.nextLine().trim());
-        System.out.println("Enter Stock of the new product:");
-        @SuppressWarnings("UnnecessaryTemporaryOnConversionFromString")
-        Integer newProductStock = Integer.parseInt(consoleInput.nextLine().trim());
 
-        String newProduct = newProductID + ";" + newProductCategory + ";" + newProductName + ";" + newProductDescription + ";" + newProductCompatibility + ";" + newProductPrice + ";" + newProductStock+ System.lineSeparator(); 
-        try (FileWriter stockFileWriter = new FileWriter(StockData.toFile(), true)) {
-            stockFileWriter.write(newProduct);
-            System.out.println("New product added successfully.");
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }  
+    private void viewProducts() {
+        if (products.isEmpty()) {
+            System.out.println("No products are currently available.");
+            return;
+        }
+        products.stream()
+                .sorted((a, b) -> Integer.compare(a.getProductId(), b.getProductId()))
+                .forEach(System.out::println);
     }
-    
+
+    private void addNewProduct() {
+        try {
+            int id = readInt("Enter ProductID of the new product:");
+            if (StockManager.findProductById(products, id).isPresent()) {
+                System.out.println("A product with that ID already exists.");
+                return;
+            }
+            String categoryLabel = readLine("Enter category of the new product (board game / accessory):");
+            ProductCategory category = ProductCategory.fromLabel(categoryLabel);
+            String detail = readLine(category == ProductCategory.BOARDGAME ? "Enter the board game type:" : "Enter the accessory type:");
+            String name = readLine("Enter name of the new product:");
+            double purchaseCost = readDouble("Enter purchase cost of the new product:");
+            int stock = readInt("Enter stock quantity of the new product:");
+            double price = readDouble("Enter sale price of the new product:");
+            String compatibility = readLine("Enter compatibility value of the new product:");
+
+            Product newProduct = category == ProductCategory.BOARDGAME
+                    ? new BoardGame(id, detail, name, purchaseCost, stock, price, compatibility)
+                    : new Accessory(id, detail, name, purchaseCost, stock, price, compatibility);
+
+            if (StockManager.addProduct(newProduct, products)) {
+                System.out.println("New product added successfully.");
+            } else {
+                System.out.println("Failed to add product. The ID may already be in use.");
+            }
+        } catch (IllegalArgumentException ex) {
+            System.out.println("Unable to add product: " + ex.getMessage());
+        }
+    }
+
+    private int readInt(String prompt) {
+        while (true) {
+            System.out.println(prompt);
+            String input = consoleInput.nextLine().trim();
+            try {
+                return Integer.parseInt(input);
+            } catch (NumberFormatException ex) {
+                System.out.println("Please enter a valid integer.");
+            }
+        }
+    }
+
+    private double readDouble(String prompt) {
+        while (true) {
+            System.out.println(prompt);
+            String input = consoleInput.nextLine().trim();
+            try {
+                return Double.parseDouble(input);
+            } catch (NumberFormatException ex) {
+                System.out.println("Please enter a valid number.");
+            }
+        }
+    }
+
+    private String readLine(String prompt) {
+        System.out.println(prompt);
+        return consoleInput.nextLine().trim();
+    }   
 }
