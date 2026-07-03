@@ -1,14 +1,14 @@
 package CLI;
 
-import Classes.Address;
-import Classes.CardPayment;
-import Classes.PayPalPayment;
-import Classes.PaymentMethod;
-import Classes.Product;
-import Classes.Receipt;
-import Classes.ShoppingBasket;
-import Classes.StockManager;
-import java.util.List;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Dictionary;
+import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Scanner;
 
 public class CustomerCLI {
@@ -66,10 +66,24 @@ public class CustomerCLI {
                 .forEach(System.out::println);
     }
 
-    private void addProductToBasket() {
-        int id = readInt("Enter the ProductID of the product you want to add to your shopping basket:");
-        Product product = findProduct(id);
-        if (product == null) {
+    private static Dictionary<Integer, Float> addProduct(Scanner consoleInput, Dictionary<Integer, Float> basket) {
+        System.out.println("Enter the ProductID of the product you want to add to your shopping basket:");
+        String productID = consoleInput.nextLine().trim();
+        File stockFile = StockData.toFile();
+        try (Scanner stockScanner = new Scanner(stockFile)) {
+            while (stockScanner.hasNextLine()) {
+                String line = stockScanner.nextLine();
+                String splitLine[] = line.split(";");
+                if (splitLine[0].equals(productID) && Integer.parseInt(splitLine[5]) > 0) {
+                    basket.put(Integer.parseInt(splitLine[0]), Float.parseFloat(splitLine[4]));
+                    System.out.println("Product added to shopping basket.");
+                    return basket;
+                }
+                else if (splitLine[0].equals(productID) && Integer.parseInt(splitLine[5]) == 0) {
+                    System.out.println("Product is out of stock, try again later.");
+                    return basket;
+            }
+            }
             System.out.println("Product not found.");
             return;
         }
@@ -88,18 +102,53 @@ public class CustomerCLI {
         System.out.println(quantity + " unit(s) added to your shopping basket.");
     }
 
-    private void viewBasket() {
-        if (basket.isEmpty()) {
-            System.out.println("Your shopping basket is empty.");
-            return;
-        }
-        basket.getBasketSummary().forEach(System.out::println);
-        System.out.printf("Total: £%.2f%n", basket.calculateTotal());
+    private static void viewBasket(Dictionary<Integer, Float> basket) {
+        System.out.println(basket);
+        return;
     }
 
-    private void purchaseItems() {
-        if (basket.isEmpty()) {
-            System.out.println("Your basket is empty. Add some products before purchasing.");
+    private static void purchaseItems(Scanner consoleInput, Dictionary<Integer, Float> basket, String username) {
+        System.out.println("Would you like to pay by PayPal or card? (Enter 'PayPal' or 'Card')");
+        String paymentMethod = consoleInput.nextLine().trim();
+
+        String billingAddress = getBillingAddress(username, UserAccountsData.toFile());
+        Float price = 0.0f;
+        for (java.util.Enumeration<Integer> keys = basket.keys(); keys.hasMoreElements();) {
+            Integer key = keys.nextElement();
+            price += basket.get(key);
+            File stockFile = StockData.toFile();
+            StringBuilder newStockData = new StringBuilder();
+            try (Scanner stockScanner = new Scanner(stockFile)) {
+                while (stockScanner.hasNextLine()) {
+                    String line = stockScanner.nextLine();
+                    String splitLine[] = line.split(";");
+                    if (Integer.parseInt(splitLine[0]) == key) {
+                        int newStock = Integer.parseInt(splitLine[5]) - 1;
+                        if (newStock > 0) {
+                            splitLine[5] = String.valueOf(newStock);
+                            line = String.join(";", splitLine);
+                            newStockData.append(line).append(System.lineSeparator());
+                        }
+                        // else remove, don't append
+                    } else {
+                        System.out.println("This item is not in stock. Please try again later.");
+                        newStockData.append(line).append(System.lineSeparator());
+                    }
+                }
+            } catch (FileNotFoundException e) {
+                System.out.println(e.getMessage());
+            }
+            try (FileWriter writer = new FileWriter(stockFile)) {
+                writer.write(newStockData.toString());
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
+        } 
+
+        if (paymentMethod.equalsIgnoreCase("PayPal")) {
+            System.out.println("Enter your email address");
+            String email = consoleInput.nextLine().trim();    
+            System.out.println(String.valueOf(price) + " paid via PayPal using " + email + " on " + java.time.LocalDate.now() + ". Billing address:" + billingAddress);
             return;
         }
         viewBasket();
